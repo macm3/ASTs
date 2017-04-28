@@ -9,6 +9,7 @@ import ast.*;
 
 public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 	
+	//hcmb
 	@Override
 	public Object visitGoal(hcmb_macm3Parser.GoalContext ctx) {
 		MainClass main = (MainClass) this.visit(ctx.getChild(0));
@@ -17,7 +18,7 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 			declList.addElement((ClassDecl) this.visit(d));
 		return new Program(main, declList);
 	}
-	
+
 	@Override
 	public Object visitMain(hcmb_macm3Parser.MainContext ctx) {
 		Identifier i1 = new Identifier(ctx.identifier(0).getText());
@@ -25,7 +26,7 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 		Statement s = (Statement) this.visit(ctx.statement());
 		return new MainClass(i1, i2, s);
 	}
-	
+
 	@Override
 	public Object visitMethodDecl(hcmb_macm3Parser.MethodDeclContext ctx) {
 		Formal f = (Formal) this.visit(ctx.formal(0));
@@ -41,7 +42,7 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 			statements.addElement((Statement) this.visit(st));
 		return new MethodDecl(f.t, f.i, formals, varDecls, statements, exp);
 	}
-	
+
 	@Override
 	public Object visitStatement(hcmb_macm3Parser.StatementContext ctx) {
 		if (ctx.getChild(0).getText().equals("{")) {
@@ -71,7 +72,7 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 			return new ArrayAssign(id1, e1, e2);
 		}
 	}
-	
+
 	@Override
 	public Object visitType(hcmb_macm3Parser.TypeContext ctx) {
 		if (ctx.getChild(0).getText().equals("int")) {
@@ -91,4 +92,50 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 		Formal f = (Formal) this.visit(ctx.formal());
 		return new VarDecl(f.t, f.i);
 	}
+	
+	//macm3
+	public Object visitId(hcmb_macm3Parser.IdentifierContext ctx){
+		System.out.println("Identificador: " + ctx);
+		return new Identifier(ctx.getText()); 
+	}
+	
+	public Object visitClassDecl(hcmb_macm3Parser.ClassDeclContext ctx){
+		Identifier id1 = (Identifier) this.visit(ctx.identifier(0));
+		Identifier id2 = null;
+		
+		if(ctx.identifier().size() >1 ) id2 = (Identifier) this.visit(ctx.identifier(1));
+		
+		VarDeclList vDs = new VarDeclList(); 
+		MethodDeclList mDs = new MethodDeclList();
+		
+		for(hcmb_macm3Parser.VarDeclContext vD : ctx.varDecl()){
+			vDs.addElement((VarDecl) this.visit(vD));
+		}
+		
+		for(hcmb_macm3Parser.MethodDeclContext mD : ctx.methodDecl()){
+			mDs.addElement((MethodDecl) this.visit(mD));
+		}
+		
+		ClassDecl cD = null;
+		if(id2 != null){
+			cD = new ClassDeclExtends(id1, id2, vDs, mDs);
+		} else{
+			cD = new ClassDeclSimple(id1, vDs, mDs);
+		}
+		
+		return cD;
+	
+	}
+
+	public Object visitFormal(hcmb_macm3Parser.FormalContext ctx){
+		Type t = (Type) this.visit(ctx.type());
+		Identifier iD = (Identifier) this.visit(ctx.identifier());
+		
+		return new Formal(t, iD);
+		
+	}
+
+//	public Object visitExpression(hcmb_macm3Parser.ExpressionContext ctx){
+//		
+//	}
 }
