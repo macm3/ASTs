@@ -26,28 +26,23 @@ statement:		'{' (statement)* '}'
 			|	identifier '=' expression ';'
 			|	identifier '[' expression ']' '=' expression ';';		
 			
-expression: 	expression('&&'|'+'|'-'|'*'|'<')expression
-			|	expression'['expression']'
-			|	expression'.''length'
-			|	expression'.'identifier'('(expression(','expression)*)?')'
-			|	INTEGERLITERAL
-			|	'true'
-			|	'false'
-			|	identifier
-			|	'this'
-			|	'new''int''['expression']'
-			|	'new'identifier'('')'
-			|	'!'expression
-			|	'('expression')';
 
-
-
-
-
-
-IDENTIFIER:('_'|[A-za-z])((([A-Za-z]|[0-9]|'_')+)*);
+expression: expression op=('&&'|'<'|'+'|'-'|'*') expression
+	| expression '[' expression ']'
+	| expression '.' 'length'
+	| expression '.' identifier '(' (expression (',' expression)*)? ')'
+	| INTEGERLITERAL
+	| 'true'
+	| 'false'
+	| identifier
+	| 'this'
+	| 'new''int''['expression']'
+	| 'new' identifier '('')'
+	| '!' expression
+	| '(' expression ')';
+			
+IDENTIFIER: ('_' | [A-Za-z])('_'|([A-Za-z] | INTEGERLITERAL))*;
 INTEGERLITERAL:([1-9][0-9]*)|'0';
-SPACES:('\n'|' '|'\r'|'\t')->skip;
-COMMENT_LINE: '//'(~[\n\r])* ->skip;
-
-MULTILINE_COMMENT : '/*' .*? '*/' -> skip ;
+SPACES:('\n'|' '|'\r'|'\t')-> skip;
+COMMENT_LINE: '//'(~[\n\r])* -> skip;
+MULTILINE_COMMENT : '/*' .*? '*/' -> skip;

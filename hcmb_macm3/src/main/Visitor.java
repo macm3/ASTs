@@ -9,7 +9,6 @@ import ast.*;
 
 public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 	
-	//hcmb
 	@Override
 	public Object visitGoal(hcmb_macm3Parser.GoalContext ctx) {
 		MainClass main = (MainClass) this.visit(ctx.getChild(0));
@@ -93,49 +92,92 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 		return new VarDecl(f.t, f.i);
 	}
 	
-	//macm3
-	public Object visitId(hcmb_macm3Parser.IdentifierContext ctx){
-		System.out.println("Identificador: " + ctx);
+	@Override
+	public Object visitIdentifier(hcmb_macm3Parser.IdentifierContext ctx){
 		return new Identifier(ctx.getText()); 
 	}
 	
+	@Override
 	public Object visitClassDecl(hcmb_macm3Parser.ClassDeclContext ctx){
 		Identifier id1 = (Identifier) this.visit(ctx.identifier(0));
 		Identifier id2 = null;
-		
-		if(ctx.identifier().size() >1 ) id2 = (Identifier) this.visit(ctx.identifier(1));
-		
+		if(ctx.identifier().size() > 1) 
+			id2 = (Identifier) this.visit(ctx.identifier(1));
 		VarDeclList vDs = new VarDeclList(); 
 		MethodDeclList mDs = new MethodDeclList();
-		
-		for(hcmb_macm3Parser.VarDeclContext vD : ctx.varDecl()){
+		for(hcmb_macm3Parser.VarDeclContext vD : ctx.varDecl())
 			vDs.addElement((VarDecl) this.visit(vD));
-		}
-		
-		for(hcmb_macm3Parser.MethodDeclContext mD : ctx.methodDecl()){
+		for(hcmb_macm3Parser.MethodDeclContext mD : ctx.methodDecl())
 			mDs.addElement((MethodDecl) this.visit(mD));
-		}
-		
-		ClassDecl cD = null;
-		if(id2 != null){
-			cD = new ClassDeclExtends(id1, id2, vDs, mDs);
-		} else{
-			cD = new ClassDeclSimple(id1, vDs, mDs);
-		}
-		
-		return cD;
-	
+		if(id2 != null)
+			return new ClassDeclExtends(id1, id2, vDs, mDs);
+		 else
+			return new ClassDeclSimple(id1, vDs, mDs);
 	}
 
+	@Override
 	public Object visitFormal(hcmb_macm3Parser.FormalContext ctx){
 		Type t = (Type) this.visit(ctx.type());
 		Identifier iD = (Identifier) this.visit(ctx.identifier());
-		
 		return new Formal(t, iD);
 		
 	}
 
-//	public Object visitExpression(hcmb_macm3Parser.ExpressionContext ctx){
-//		
-//	}
+	@Override
+	public Object visitExpression(hcmb_macm3Parser.ExpressionContext ctx) {
+		if (ctx.getChild(1).getText().equals(".")) {
+			if (ctx.getChild(2).getText().equals("length")) {
+				return new ArrayLength((Exp) this.visit(ctx.expression(0)));
+			} else {
+				List<hcmb_macm3Parser.ExpressionContext> expressionContext = ctx.expression();
+				List<Exp> exps = new ArrayList<Exp>();
+				for (hcmb_macm3Parser.ExpressionContext ctxs : expressionContext) 
+					exps.add((Exp) this.visit(ctxs));
+				Exp first = exps.get(0);
+				exps.remove(0);
+				ExpList list = new ExpList();
+				for (Exp exp2 : exps) 
+					list.addElement(exp2);
+				return new Call(first, new Identifier(ctx.identifier().getText()), list);
+			}
+		} else if (ctx.getChild(1).getText().equals("[")) {
+			Exp e1 = (Exp) this.visit(ctx.expression(0));
+			Exp e2 = (Exp) this.visit(ctx.expression(1));
+			return new ArrayLookup(e1, e2);
+		} else if (ctx.INTEGERLITERAL() != null) {
+			return new IntegerLiteral(Integer.parseInt(ctx.INTEGERLITERAL().getText()));
+		} else if (ctx.identifier() != null) {
+			return new IdentifierExp(ctx.identifier().getText());
+		} else if (ctx.getChild(0).getText().equals("new")) {
+			if (ctx.getChild(1).getText().equals("int")) {
+				return new NewArray((Exp) this.visit(ctx.expression(0)));
+			} else {
+				return new NewObject(new Identifier(ctx.identifier().getText()));
+			}
+		} else if (ctx.getChild(0).getText().equals("!")) {
+			return new Not((Exp) this.visit(ctx.expression(0)));
+		} else if (ctx.getChild(0).getText().equals("(")) {
+			return (Exp) this.visit(ctx.expression(0));
+		} else if (ctx.getText().equals("true")) {
+			return new True();
+		} else if (ctx.getText().equals("false")) {
+			return new False();
+		} else if (ctx.getText().equals("this")) {
+			return new This();
+		} else {
+			Exp e1 = (Exp) this.visit(ctx.expression(0));
+			Exp e2 = (Exp) this.visit(ctx.expression(1));
+			if(ctx.op.getText().equals("&&"))
+				return new And(e1, e2);
+			else if (ctx.op.getText().equals("<"))
+				return new LessThan(e1, e2);
+			else if (ctx.op.getText().equals("+"))
+				return new Plus(e1, e2);
+			else if(ctx.op.getText().equals("-"))
+				return new Minus(e1, e2);
+			else if(ctx.op.getText().equals("*"))
+				return new Times(e1, e2);
+		}
+		return null;
+	}
 }
