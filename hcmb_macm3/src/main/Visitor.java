@@ -125,8 +125,8 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 
 	@Override
 	public Object visitExpression(hcmb_macm3Parser.ExpressionContext ctx) {
-		if (ctx.getChild(1).getText().equals(".")) {
-			if (ctx.getChild(2).getText().equals("length")) {
+		if (ctx.getChildCount() > 1 && ctx.getChild(1).getText().equals(".")) {
+			if (ctx.getChildCount() > 2 && ctx.getChild(2).getText().equals("length")) {
 				return new ArrayLength((Exp) this.visit(ctx.expression(0)));
 			} else {
 				List<hcmb_macm3Parser.ExpressionContext> expressionContext = ctx.expression();
@@ -140,7 +140,7 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 					list.addElement(exp2);
 				return new Call(first, new Identifier(ctx.identifier().getText()), list);
 			}
-		} else if (ctx.getChild(1).getText().equals("[")) {
+		} else if (ctx.getChildCount() > 1 && ctx.getChild(1).getText().equals("[")) {
 			Exp e1 = (Exp) this.visit(ctx.expression(0));
 			Exp e2 = (Exp) this.visit(ctx.expression(1));
 			return new ArrayLookup(e1, e2);
@@ -148,15 +148,15 @@ public class Visitor extends hcmb_macm3BaseVisitor<Object>{
 			return new IntegerLiteral(Integer.parseInt(ctx.INTEGERLITERAL().getText()));
 		} else if (ctx.identifier() != null) {
 			return new IdentifierExp(ctx.identifier().getText());
-		} else if (ctx.getChild(0).getText().equals("new")) {
-			if (ctx.getChild(1).getText().equals("int")) {
+		} else if (ctx.getChildCount() > 0 && ctx.getChild(0).getText().equals("new")) {
+			if (ctx.getChildCount() > 1 && ctx.getChild(1).getText().equals("int")) {
 				return new NewArray((Exp) this.visit(ctx.expression(0)));
 			} else {
 				return new NewObject(new Identifier(ctx.identifier().getText()));
 			}
-		} else if (ctx.getChild(0).getText().equals("!")) {
+		} else if (ctx.getChildCount() > 0 && ctx.getChild(0).getText().equals("!")) {
 			return new Not((Exp) this.visit(ctx.expression(0)));
-		} else if (ctx.getChild(0).getText().equals("(")) {
+		} else if (ctx.getChildCount() > 0 && ctx.getChild(0).getText().equals("(")) {
 			return (Exp) this.visit(ctx.expression(0));
 		} else if (ctx.getText().equals("true")) {
 			return new True();

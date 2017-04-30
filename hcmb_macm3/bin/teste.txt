@@ -3,12 +3,15 @@ class BubbleSort{
 	System.out.println(new BBS().Start(10));
     }
 }
+/* Testing multi line
+   comment */
 class BBS{
     int[] number ;
     int size ;
 
     // Invoke the Initialization, Sort and Printing
     // Methods
+    
     public int Start(int sz){
 	int aux01 ;
 	aux01 = this.Init(sz);
