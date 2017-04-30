@@ -19,7 +19,7 @@ public class Main {
 		CommonTokenStream token = new CommonTokenStream(lexer);
 		hcmb_macm3Parser parser = new hcmb_macm3Parser(token);
 		ParseTree tree = parser.goal();
-		Visitor visitor = new Visitor();
+		hcmb_macm3TestVisitor visitor = new hcmb_macm3TestVisitor();
 		Program program = (Program) visitor.visit(tree);
 		program.accept(new PrettyPrintVisitor());
 	}

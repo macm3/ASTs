@@ -7,7 +7,7 @@ import javax.swing.plaf.synth.SynthSeparatorUI;
 import org.antlr.v4.runtime.tree.ParseTree;
 import ast.*;
 
-public class Visitor extends hcmb_macm3BaseVisitor<Object>{
+public class hcmb_macm3TestVisitor extends hcmb_macm3BaseVisitor<Object>{
 	
 	@Override
 	public Object visitGoal(hcmb_macm3Parser.GoalContext ctx) {
