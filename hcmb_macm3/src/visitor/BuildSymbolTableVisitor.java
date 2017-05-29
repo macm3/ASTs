@@ -11,6 +11,7 @@ import ast.Assign;
 import ast.Block;
 import ast.BooleanType;
 import ast.Call;
+import ast.ClassDecl;
 import ast.ClassDeclExtends;
 import ast.ClassDeclSimple;
 import ast.False;
@@ -75,12 +76,14 @@ public class BuildSymbolTableVisitor implements Visitor {
 	// MethodDeclList ml;
 	public void visit(ClassDeclSimple n) {
 		n.i.accept(this);
+		AddClass(n);
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}
 		for (int i = 0; i < n.ml.size(); i++) {
 			n.ml.elementAt(i).accept(this);
 		}
+		currClass = null;
 	}
 
 	// Identifier i;
@@ -90,12 +93,14 @@ public class BuildSymbolTableVisitor implements Visitor {
 	public void visit(ClassDeclExtends n) {
 		n.i.accept(this);
 		n.j.accept(this);
+		AddClass(n);
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}
 		for (int i = 0; i < n.ml.size(); i++) {
 			n.ml.elementAt(i).accept(this);
 		}
+		currClass = null;
 	}
 
 	// Type t;
@@ -103,6 +108,7 @@ public class BuildSymbolTableVisitor implements Visitor {
 	public void visit(VarDecl n) {
 		n.t.accept(this);
 		n.i.accept(this);
+		AddVariable(n);
 	}
 
 	// Type t;
@@ -114,6 +120,7 @@ public class BuildSymbolTableVisitor implements Visitor {
 	public void visit(MethodDecl n) {
 		n.t.accept(this);
 		n.i.accept(this);
+		AddMethod(n);
 		for (int i = 0; i < n.fl.size(); i++) {
 			n.fl.elementAt(i).accept(this);
 		}
@@ -124,6 +131,7 @@ public class BuildSymbolTableVisitor implements Visitor {
 			n.sl.elementAt(i).accept(this);
 		}
 		n.e.accept(this);
+		currMethod = null;
 	}
 
 	// Type t;
@@ -131,6 +139,7 @@ public class BuildSymbolTableVisitor implements Visitor {
 	public void visit(Formal n) {
 		n.t.accept(this);
 		n.i.accept(this);
+		AddParam(n);
 	}
 
 	public void visit(IntArrayType n) {
@@ -274,4 +283,34 @@ public class BuildSymbolTableVisitor implements Visitor {
 	// String s;
 	public void visit(Identifier n) {
 	}
+	
+	void AddClass(ClassDeclSimple cd){
+		symbolTable.addClass(cd.i.s, "");
+		currClass = symbolTable.getClass(cd.i.s);
+	}
+	
+	void AddClass(ClassDeclExtends cd){
+		symbolTable.addClass(cd.i.s, cd.j.s);
+		currClass = symbolTable.getClass(cd.i.s);
+	
+	}
+	
+	void AddVariable(VarDecl vd){
+		if(currMethod != null){
+			symbolTable.getMethod(currMethod.getId(), currClass.getId()).addVar(vd.i.s, vd.t);
+		} else {
+			symbolTable.getClass(currClass.getId()).addVar(vd.i.s, vd.t);
+		}
+	}
+	
+	void AddParam(Formal f){
+		symbolTable.getMethod(currMethod.getId(), currClass.getId()).addParam(f.i.s, f.t);
+	}
+	
+	void AddMethod(MethodDecl md){
+		symbolTable.getClass(currClass.getId()).addMethod(md.i.s, md.t);
+		currMethod = symbolTable.getMethod(md.i.s, currClass.getId());
+	}
+	
+
 }

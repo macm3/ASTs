@@ -7,7 +7,9 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import ast.*;
+import visitor.BuildSymbolTableVisitor;
 import visitor.PrettyPrintVisitor;
+import visitor.TypeCheckVisitor;
 
 
 public class Main {
@@ -22,6 +24,10 @@ public class Main {
 		hcmb_macm3TestVisitor visitor = new hcmb_macm3TestVisitor();
 		Program program = (Program) visitor.visit(tree);
 		program.accept(new PrettyPrintVisitor());
+		BuildSymbolTableVisitor build = new BuildSymbolTableVisitor();
+		program.accept(build);
+		TypeCheckVisitor typeCheck = new TypeCheckVisitor(build.getSymbolTable());
+		program.accept(typeCheck);
 	}
 
 }
