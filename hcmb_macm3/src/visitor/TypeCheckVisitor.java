@@ -46,6 +46,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 
 	public TypeCheckVisitor(SymbolTable st) {
 		symbolTable = st;
+		st.PrintContent();
 	}
 
 	private Class currClass;
@@ -74,13 +75,15 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// VarDeclList vl;
 	// MethodDeclList ml;
 	public Type visit(ClassDeclSimple n) {
+		currClass = symbolTable.getClass(n.i.s);
 		n.i.accept(this);
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}
 		for (int i = 0; i < n.ml.size(); i++) {
-			n.ml.elementAt(i).accept(this);
+			n.ml.elementAt(i).accept(this);		
 		}
+		currClass = null;
 		return null;
 	}
 
@@ -89,15 +92,18 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// VarDeclList vl;
 	// MethodDeclList ml;
 	public Type visit(ClassDeclExtends n) {
+		currClass = symbolTable.getClass(n.i.s);
 		n.i.accept(this);
 		n.j.accept(this);
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}
 		for (int i = 0; i < n.ml.size(); i++) {
-			n.ml.elementAt(i).accept(this);
+			n.ml.elementAt(i).accept(this);		
 		}
+		currClass = null;
 		return null;
+
 	}
 
 	// Type t;
@@ -117,6 +123,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 	public Type visit(MethodDecl n) {
 		n.t.accept(this);
 		n.i.accept(this);
+		currMethod = symbolTable.getMethod(n.i.s, currClass.getId());
 		for (int i = 0; i < n.fl.size(); i++) {
 			n.fl.elementAt(i).accept(this);
 		}
@@ -127,6 +134,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 			n.sl.elementAt(i).accept(this);
 		}
 		n.e.accept(this);
+		currMethod = null;
 		return null;
 	}
 
@@ -167,15 +175,12 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Statement s1,s2;
 	public Type visit(If n) {
 		Type t = n.e.accept(this);
+		if(symbolTable.compareTypes(t, new BooleanType())){
+			System.out.println("Erro no argumento do IF! Tipo: " + t.toString() + " Expressao: " + n.e.toString());
+			return null;
+		}
 		n.s1.accept(this);
 		n.s2.accept(this);
-
-		BooleanType b = new BooleanType();
-
-		if (symbolTable.compareTypes(t, b)) return null;
-		
-		System.out.println("Erro no argumento do IF! Tipo: " + t.toString() + " Expressao: " + n.e.toString());
-			
 		return null; 
 		
 	}
@@ -184,14 +189,11 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Statement s;
 	public Type visit(While n) {
 		Type t = n.e.accept(this);
+		if(symbolTable.compareTypes(t, new BooleanType())){
+			System.out.println("Erro no argumento do While! Tipo: " + t.toString() + " Expressao: " + n.e.toString());
+			return null;
+		}
 		n.s.accept(this);
-		
-		BooleanType b = new BooleanType();
-		
-		if(symbolTable.compareTypes(t, b)) return null;
-		
-		System.out.println("Erro no argumento do While! Tipo: " + t.toString() + " Expressao: " + n.e.toString());
-		
 		return null;
 	}
 
@@ -206,132 +208,169 @@ public class TypeCheckVisitor implements TypeVisitor {
 	public Type visit(Assign n) {
 		Type t = n.i.accept(this);
 		Type t1 = n.e.accept(this);
-		
-		if(symbolTable.compareTypes(t, t1)) return null;
-		
-		System.out.println("Erro no Assign! Tipo: " + t.toString() + " Identificador: " + n.i.s + "\n");
-		System.out.println("Tipo: " + t1.toString() + " Expressao: " + n.e.toString());
-		
-		return null;
+		if(!symbolTable.compareTypes(t, t1)){
+			System.out.println("Erro no Assign! Tipo: " + t.toString() + " Identificador: " + n.i.s + "\n");
+			System.out.println("Tipo: " + t1.toString() + " Expressao: " + n.e.toString());
+			return null;
+		}
+		return t1;
 	}
 
 	// Identifier i;
 	// Exp e1,e2;
 	public Type visit(ArrayAssign n) {
-		n.i.accept(this);
-		n.e1.accept(this);
-		n.e2.accept(this);
-		return null;
+		if(!symbolTable.compareTypes(n.i.accept(this), new IntArrayType())){
+			System.out.println("Assigning to an int array typed wrong.");
+			return null;
+		}
+		if(!symbolTable.compareTypes(n.e1.accept(this), new IntegerType())){
+			System.out.println("Acessing index with non integer type in array assign");
+			return null;
+		}
+		if(!symbolTable.compareTypes(n.e2.accept(this), new IntArrayType())){
+			System.out.println("Assigning non integer value to an int array");
+			return null;
+		}
+		return new IntegerType();
 	}
 
 	// Exp e1,e2;
 	public Type visit(And n) {
-		Type t = n.e1.accept(this);
-		Type t1 = n.e2.accept(this);
-		
-		BooleanType b = new BooleanType();
-		
-		if(symbolTable.compareTypes(t, b) && symbolTable.compareTypes(t1, b)) return null;
-		
-		System.out.println("Erro no argumento do And!");
-		
-		return null;
+		Type t1 = n.e1.accept(this);
+		Type t2 = n.e2.accept(this);
+		BooleanType type = new BooleanType();
+		if(!symbolTable.compareTypes(t1, type) || !symbolTable.compareTypes(t2, type)) {
+			System.out.println("One of the and operators in a expression isn't boolean");
+			return null;
+		}
+		return type;
 	}
 
 	// Exp e1,e2;
 	public Type visit(LessThan n) {
-		Type t = n.e1.accept(this);
-		Type t1 = n.e2.accept(this);
-		
+		Type t1 = n.e1.accept(this);
+		Type t2 = n.e2.accept(this);
 		IntegerType type = new IntegerType();
-		
-		if(symbolTable.compareTypes(t, type) && symbolTable.compareTypes(t1, type)) return null;
-		System.out.println("Erro no argumento do LessThan!");
-		
-		return null;
+		if(!symbolTable.compareTypes(t1, type) || !symbolTable.compareTypes(t2, type)) {
+			System.out.println("One of the less than operators in a expression isn't integer");
+			return null;
+		}
+		return new BooleanType();
 	}
 
 	// Exp e1,e2;
 	public Type visit(Plus n) {
 		Type t1 = n.e1.accept(this);
 		Type t2 = n.e2.accept(this);
-		
 		IntegerType type = new IntegerType();
-
-		if(symbolTable.compareTypes(t1, type) && symbolTable.compareTypes(t2, type)) return null;
-		System.out.println("Erro no argumento do Plus!");
-		
-		return null;
+		if(!symbolTable.compareTypes(t1, type) || !symbolTable.compareTypes(t2, type)) {
+			System.out.println("One of the sums in a expression isn't integer");
+			return null;
+		}
+		return type;
 	}
 
 	// Exp e1,e2;
 	public Type visit(Minus n) {
 		Type t1 = n.e1.accept(this);
 		Type t2 = n.e2.accept(this);
-		
 		IntegerType type = new IntegerType();
-
-		if(symbolTable.compareTypes(t1, type) && symbolTable.compareTypes(t2, type)) return null;
-		System.out.println("Erro no argumento do Minus!");
-		
-		return null;
+		if(!symbolTable.compareTypes(t1, type) || !symbolTable.compareTypes(t2, type)) {
+			System.out.println("One of the subtractions in a expression isn't integer");
+			return null;
+		}
+		return type;
 	}
 
 	// Exp e1,e2;
 	public Type visit(Times n) {
 		Type t1 = n.e1.accept(this);
 		Type t2 = n.e2.accept(this);
-		
 		IntegerType type = new IntegerType();
-
-		if(symbolTable.compareTypes(t1, type) && symbolTable.compareTypes(t2, type)) return null;
-		System.out.println("Erro no argumento do Times!");
-		
-		return null;
+		if(!symbolTable.compareTypes(t1, type) || !symbolTable.compareTypes(t2, type)) {
+			System.out.println("One of the multiplications in a expression isn't integer");
+			return null;
+		}
+		return type;
 	}
 
 	// Exp e1,e2;
 	public Type visit(ArrayLookup n) {
-		n.e1.accept(this);
-		n.e2.accept(this);
-		return null;
+		if(!symbolTable.compareTypes(n.e1.accept(this), new IntArrayType())){
+			System.out.println("Looking up in an array that isn't IntArrayType.");
+			return null;
+		}
+		if(!symbolTable.compareTypes(n.e2.accept(this), new IntegerType())){
+			System.out.println("Looking up in an array with an non IntegerType index");
+			return null;	
+		}
+		return new IntegerType();
 	}
 
 	// Exp e;
 	public Type visit(ArrayLength n) {
-		n.e.accept(this);
-		return null;
+		if(!symbolTable.compareTypes(n.e.accept(this), new IntArrayType())){
+			System.out.println("Expression at .lenght isn't an int array");
+			return null;
+		}
+		return new IntegerType();
 	}
 
 	// Exp e;
 	// Identifier i;
 	// ExpList el;
 	public Type visit(Call n) {
-		Class save = currClass;
-		IdentifierType t = (IdentifierType) n.e.accept(this);
-		currClass = symbolTable.getClass(t.s);
-		Type t1 = n.i.accept(this);
-		currClass = save;
+		Type te = n.e.accept(this);
+		
+		if(!(te instanceof IdentifierType)){
+			System.out.println("Expression isn't a class in call");
+			return null;
+		}
+		
+		Type ti = n.i.accept(this);
+		
+		if(!(ti instanceof IdentifierType)){
+			System.out.println("Identifier isn't a method in call");
+			return null;
+		}
+		
+		Method m = symbolTable.getMethod(((IdentifierType)ti).s, ((IdentifierType)te).s);
+		if(m ==  null){
+			return null;
+		}
+		
 		
 		int i;
-		for(i=0; i<n.el.size(); i++){
-			n.el.elementAt(i).accept(this);
+		for(i=0; i < n.el.size() ; i++){
+			if(m.getParamAt(i) == null){
+				System.out.println("Extra param at method call.");
+				return null;
+			}
+			if(!symbolTable.compareTypes(n.el.elementAt(i).accept(this), m.getParamAt(i).type())){
+				System.out.println("Different param type at call.");
+				return null;
+			}
 		}
-		return null;
 		
+		if(m.getParamAt(i) != null){
+			System.out.println("Missing param at method call.");
+			return null;
+		}
+		
+		return m.type();
 	}
 
 	// int i;
 	public Type visit(IntegerLiteral n) {
-		return null;
+		return new IntegerType();
 	}
 
 	public Type visit(True n) {
-		return null;
+		return new BooleanType();
 	}
 
 	public Type visit(False n) {
-		return null;
+		return new BooleanType();
 	}
 
 	// String s;
@@ -340,34 +379,36 @@ public class TypeCheckVisitor implements TypeVisitor {
 	}
 
 	public Type visit(This n) {
-		//return IdentifierType(currClass.getId()); ->eu achava q era assim 
-		return null;
+		return new IdentifierType(currClass.getId());
 	}
 
 	// Exp e;
 	public Type visit(NewArray n) {
-		n.e.accept(this);
-		return null;
+		Type t = n.e.accept(this);
+		if(!(symbolTable.compareTypes(t, new IntegerType()))){
+			System.out.println("Wrong expression type at array creation");
+			return null;
+		}
+		return new IntArrayType();
 	}
 
 	// Identifier i;
 	public Type visit(NewObject n) {
-		return null;
+		return n.i.accept(this);
 	}
 
 	// Exp e;
 	public Type visit(Not n) {
 		Type t = n.e.accept(this);
-		BooleanType b = new BooleanType();
-		if(symbolTable.compareTypes(t, b)) return null;
-		
-		System.out.println("Erro no argumento do NOT!");
-		
-		return null;
+		if(!symbolTable.compareTypes(t, new BooleanType())) {
+			System.out.println("Wrong typings at NOT");
+			return null;
+		}
+		return new BooleanType();
 	}
 
 	// String s;
 	public Type visit(Identifier n) {
-		return null;
+		return new IdentifierType(n.s);
 	}
 }
