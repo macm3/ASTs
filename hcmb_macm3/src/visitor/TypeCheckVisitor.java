@@ -133,20 +133,20 @@ public class TypeCheckVisitor implements TypeVisitor {
 	}
 
 	public Type visit(IntArrayType n) {
-		return null;
+		return n;
 	}
 
 	public Type visit(BooleanType n) {
-		return null;
+		return n;
 	}
 
 	public Type visit(IntegerType n) {
-		return null;
+		return n;
 	}
 
 	// String s;
 	public Type visit(IdentifierType n) {
-		return null;
+		return n;
 	}
 
 	// StatementList sl;
@@ -160,10 +160,16 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Exp e;
 	// Statement s1,s2;
 	public Type visit(If n) {
-		n.e.accept(this);
+		Type t = n.e.accept(this);
 		n.s1.accept(this);
 		n.s2.accept(this);
-		return null;
+		
+		if(!(t instanceof BooleanType)){
+			System.out.println("erro");
+		}
+		
+		return null; 
+		
 	}
 
 	// Exp e;
