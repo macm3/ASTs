@@ -1,5 +1,7 @@
 package visitor;
 
+import symboltable.Method;
+import symboltable.Class;
 import symboltable.SymbolTable;
 import ast.And;
 import ast.ArrayAssign;
@@ -40,11 +42,15 @@ import ast.While;
 public class TypeCheckVisitor implements TypeVisitor {
 
 	private SymbolTable symbolTable;
+	
 
 	public TypeCheckVisitor(SymbolTable st) {
 		symbolTable = st;
 	}
 
+	private Class currClass;
+	private Method currMethod;
+	
 	// MainClass m;
 	// ClassDeclList cl;
 	public Type visit(Program n) {
@@ -156,18 +162,20 @@ public class TypeCheckVisitor implements TypeVisitor {
 		}
 		return null;
 	}
-
+	
 	// Exp e;
 	// Statement s1,s2;
 	public Type visit(If n) {
 		Type t = n.e.accept(this);
 		n.s1.accept(this);
 		n.s2.accept(this);
+
+		BooleanType b = new BooleanType();
+
+		if (symbolTable.compareTypes(t, b)) return null;
 		
-		if(!(t instanceof BooleanType)){
-			System.out.println("erro");
-		}
-		
+		System.out.println("Erro no argumento do IF! Tipo: " + t.toString() + " Expressao: " + n.e.toString());
+			
 		return null; 
 		
 	}
@@ -175,8 +183,15 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Exp e;
 	// Statement s;
 	public Type visit(While n) {
-		n.e.accept(this);
+		Type t = n.e.accept(this);
 		n.s.accept(this);
+		
+		BooleanType b = new BooleanType();
+		
+		if(symbolTable.compareTypes(t, b)) return null;
+		
+		System.out.println("Erro no argumento do While! Tipo: " + t.toString() + " Expressao: " + n.e.toString());
+		
 		return null;
 	}
 
@@ -189,8 +204,14 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Identifier i;
 	// Exp e;
 	public Type visit(Assign n) {
-		n.i.accept(this);
-		n.e.accept(this);
+		Type t = n.i.accept(this);
+		Type t1 = n.e.accept(this);
+		
+		if(symbolTable.compareTypes(t, t1)) return null;
+		
+		System.out.println("Erro no Assign! Tipo: " + t.toString() + " Identificador: " + n.i.s + "\n");
+		System.out.println("Tipo: " + t1.toString() + " Expressao: " + n.e.toString());
+		
 		return null;
 	}
 
@@ -205,36 +226,67 @@ public class TypeCheckVisitor implements TypeVisitor {
 
 	// Exp e1,e2;
 	public Type visit(And n) {
-		n.e1.accept(this);
-		n.e2.accept(this);
+		Type t = n.e1.accept(this);
+		Type t1 = n.e2.accept(this);
+		
+		BooleanType b = new BooleanType();
+		
+		if(symbolTable.compareTypes(t, b) && symbolTable.compareTypes(t1, b)) return null;
+		
+		System.out.println("Erro no argumento do And!");
+		
 		return null;
 	}
 
 	// Exp e1,e2;
 	public Type visit(LessThan n) {
-		n.e1.accept(this);
-		n.e2.accept(this);
+		Type t = n.e1.accept(this);
+		Type t1 = n.e2.accept(this);
+		
+		IntegerType type = new IntegerType();
+		
+		if(symbolTable.compareTypes(t, type) && symbolTable.compareTypes(t1, type)) return null;
+		System.out.println("Erro no argumento do LessThan!");
+		
 		return null;
 	}
 
 	// Exp e1,e2;
 	public Type visit(Plus n) {
-		n.e1.accept(this);
-		n.e2.accept(this);
+		Type t1 = n.e1.accept(this);
+		Type t2 = n.e2.accept(this);
+		
+		IntegerType type = new IntegerType();
+
+		if(symbolTable.compareTypes(t1, type) && symbolTable.compareTypes(t2, type)) return null;
+		System.out.println("Erro no argumento do Plus!");
+		
 		return null;
 	}
 
 	// Exp e1,e2;
 	public Type visit(Minus n) {
-		n.e1.accept(this);
-		n.e2.accept(this);
+		Type t1 = n.e1.accept(this);
+		Type t2 = n.e2.accept(this);
+		
+		IntegerType type = new IntegerType();
+
+		if(symbolTable.compareTypes(t1, type) && symbolTable.compareTypes(t2, type)) return null;
+		System.out.println("Erro no argumento do Minus!");
+		
 		return null;
 	}
 
 	// Exp e1,e2;
 	public Type visit(Times n) {
-		n.e1.accept(this);
-		n.e2.accept(this);
+		Type t1 = n.e1.accept(this);
+		Type t2 = n.e2.accept(this);
+		
+		IntegerType type = new IntegerType();
+
+		if(symbolTable.compareTypes(t1, type) && symbolTable.compareTypes(t2, type)) return null;
+		System.out.println("Erro no argumento do Times!");
+		
 		return null;
 	}
 
@@ -255,12 +307,18 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Identifier i;
 	// ExpList el;
 	public Type visit(Call n) {
-		n.e.accept(this);
-		n.i.accept(this);
-		for (int i = 0; i < n.el.size(); i++) {
+		Class save = currClass;
+		IdentifierType t = (IdentifierType) n.e.accept(this);
+		currClass = symbolTable.getClass(t.s);
+		Type t1 = n.i.accept(this);
+		currClass = save;
+		
+		int i;
+		for(i=0; i<n.el.size(); i++){
 			n.el.elementAt(i).accept(this);
 		}
 		return null;
+		
 	}
 
 	// int i;
@@ -278,10 +336,11 @@ public class TypeCheckVisitor implements TypeVisitor {
 
 	// String s;
 	public Type visit(IdentifierExp n) {
-		return null;
+		return symbolTable.getVarType(currMethod, currClass, n.s);
 	}
 
 	public Type visit(This n) {
+		//return IdentifierType(currClass.getId()); ->eu achava q era assim 
 		return null;
 	}
 
@@ -298,7 +357,12 @@ public class TypeCheckVisitor implements TypeVisitor {
 
 	// Exp e;
 	public Type visit(Not n) {
-		n.e.accept(this);
+		Type t = n.e.accept(this);
+		BooleanType b = new BooleanType();
+		if(symbolTable.compareTypes(t, b)) return null;
+		
+		System.out.println("Erro no argumento do NOT!");
+		
 		return null;
 	}
 
