@@ -42,7 +42,6 @@ import ast.While;
 public class TypeCheckVisitor implements TypeVisitor {
 
 	private SymbolTable symbolTable;
-	
 
 	public TypeCheckVisitor(SymbolTable st) {
 		symbolTable = st;
@@ -66,7 +65,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 	public Type visit(MainClass n) {
 		currClass = symbolTable.getClass(n.i1.s);
 		n.i1.accept(this);
-		n.i2.accept(this);
+		//n.i2.accept(this); //nao eh necesssario checar o tipo do parametro da classe main
 		n.s.accept(this);
 		currClass = null;
 		return null;
@@ -138,7 +137,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 			n.sl.elementAt(i).accept(this);
 		}
 		if(!symbolTable.compareTypes(currMethod.type(), n.e.accept(this))){
-			System.out.println("Retorno do método "+ n.i.s +" não condiz com seu tipo");
+			System.out.println("Retorno do mï¿½todo "+ n.i.s +" nï¿½o condiz com seu tipo");
 		}
 		currMethod = null;
 		return null;
@@ -181,7 +180,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Statement s1,s2;
 	public Type visit(If n) {
 		Type t = n.e.accept(this);
-		if(symbolTable.compareTypes(t, new BooleanType())){
+		if(!symbolTable.compareTypes(t, new BooleanType())){
 			System.out.println("Erro no argumento do IF! Tipo: " + t.toString() + " Expressao: " + n.e.toString());
 		}
 		n.s1.accept(this);
@@ -194,7 +193,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Statement s;
 	public Type visit(While n) {
 		Type t = n.e.accept(this);
-		if(symbolTable.compareTypes(t, new BooleanType())){
+		if(!symbolTable.compareTypes(t, new BooleanType())){
 			System.out.println("Erro no argumento do While! Tipo: " + t.toString() + " Expressao: " + n.e.toString());
 		}
 		n.s.accept(this);
@@ -227,7 +226,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 		if(!symbolTable.compareTypes(n.e1.accept(this), new IntegerType())){
 			System.out.println("Acessing index with non integer type in array assign");
 		}
-		if(!symbolTable.compareTypes(n.e2.accept(this), new IntArrayType())){
+		if(!symbolTable.compareTypes(n.e2.accept(this), new IntegerType())){
 			System.out.println("Assigning non integer value to an int array");
 		}
 		return new IntegerType();
@@ -317,13 +316,9 @@ public class TypeCheckVisitor implements TypeVisitor {
 			System.out.println("Expression isn't a class in call");
 		}
 		
-		Type ti = n.i.accept(this);
+		n.i.accept(this);
 		
-		if(!(ti instanceof IdentifierType)){
-			System.out.println("Identifier "+ n.i.s +" isn't a method in call");
-		}
-		
-		Method m = symbolTable.getMethod(((IdentifierType)ti).s, ((IdentifierType)te).s);
+		Method m = symbolTable.getMethod(n.i.s, ((IdentifierType)te).s);
 		if(m ==  null){
 			int i;
 			for(i=0; i < n.el.size() ; i++){
@@ -402,6 +397,12 @@ public class TypeCheckVisitor implements TypeVisitor {
 
 	// String s;
 	public Type visit(Identifier n) {
-		return ;
+		if(symbolTable.containsClass(n.s)) return symbolTable.getClass(n.s).type();
+		if(currClass != null && currClass.containsVar(n.s)) return currClass.getVar(n.s).type();
+		if(currClass != null && currClass.containsMethod(n.s)) return currClass.getMethod(n.s).type();
+		if(currMethod != null && currMethod.containsParam(n.s)) return currMethod.getParam(n.s).type();
+		if(currMethod != null && currMethod.containsVar(n.s)) return currMethod.getVar(n.s).type();
+		System.out.println("Erro! Identificador " + n.s + " nao declarado.");
+		return null;
 	}
 }

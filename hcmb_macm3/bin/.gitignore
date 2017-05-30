@@ -1,4 +1,6 @@
-/main/
-/visitor/
-/symboltable/
+/ast/
 /hcmb_macm3.g4
+/main/
+/symboltable/
+/teste.txt
+/visitor/
