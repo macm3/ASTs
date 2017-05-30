@@ -1,8 +1,12 @@
 package visitor;
 
 import symboltable.SymbolTable;
+import symboltable.Variable;
 import symboltable.Class;
 import symboltable.Method;
+
+import java.util.Enumeration;
+
 import ast.And;
 import ast.ArrayAssign;
 import ast.ArrayLength;
@@ -66,17 +70,19 @@ public class BuildSymbolTableVisitor implements Visitor {
 	// Identifier i1,i2;
 	// Statement s;
 	public void visit(MainClass n) {
+		AddClass(n);
 		n.i1.accept(this);
 		n.i2.accept(this);
 		n.s.accept(this);
+		currClass = null;
 	}
 
 	// Identifier i;
 	// VarDeclList vl;
 	// MethodDeclList ml;
 	public void visit(ClassDeclSimple n) {
-		n.i.accept(this);
 		AddClass(n);
+		n.i.accept(this);
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}
@@ -91,9 +97,9 @@ public class BuildSymbolTableVisitor implements Visitor {
 	// VarDeclList vl;
 	// MethodDeclList ml;
 	public void visit(ClassDeclExtends n) {
+		AddClass(n);
 		n.i.accept(this);
 		n.j.accept(this);
-		AddClass(n);
 		for (int i = 0; i < n.vl.size(); i++) {
 			n.vl.elementAt(i).accept(this);
 		}
@@ -118,10 +124,10 @@ public class BuildSymbolTableVisitor implements Visitor {
 	// StatementList sl;
 	// Exp e;
 	public void visit(MethodDecl n) {
+		AddMethod(n);
 		n.t.accept(this);
 		n.i.accept(this);
-		AddMethod(n);
-		for (int i = 0; i < n.fl.size(); i++) {
+		for (int i = 1; i < n.fl.size(); i++) {
 			n.fl.elementAt(i).accept(this);
 		}
 		for (int i = 0; i < n.vl.size(); i++) {
@@ -293,6 +299,11 @@ public class BuildSymbolTableVisitor implements Visitor {
 		symbolTable.addClass(cd.i.s, cd.j.s);
 		currClass = symbolTable.getClass(cd.i.s);
 	
+	}
+	
+	void AddClass(MainClass n){
+		symbolTable.addClass(n.i1.s, "");
+		currClass = symbolTable.getClass(n.i1.s);
 	}
 	
 	void AddVariable(VarDecl vd){

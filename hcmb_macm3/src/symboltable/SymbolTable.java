@@ -10,13 +10,6 @@ import ast.Type;
 public class SymbolTable {
 
 	private Hashtable<Object, Object> hashtable;
-	
-	public void PrintContent()
-	{
-		for(Object obj: hashtable.values()){
-			System.out.println(((Class)obj).getId());
-		}
-	}
 
 	public SymbolTable() {
 		hashtable = new Hashtable<Object, Object>();
