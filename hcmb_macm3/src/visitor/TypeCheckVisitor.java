@@ -64,9 +64,11 @@ public class TypeCheckVisitor implements TypeVisitor {
 	// Statement s;
 	public Type visit(MainClass n) {
 		currClass = symbolTable.getClass(n.i1.s);
+		currMethod = symbolTable.getMethod("main", currClass.getId());
 		n.i1.accept(this);
-		//n.i2.accept(this); //nao eh necesssario checar o tipo do parametro da classe main
+		n.i2.accept(this);
 		n.s.accept(this);
+		currMethod = null;
 		currClass = null;
 		return null;
 	}

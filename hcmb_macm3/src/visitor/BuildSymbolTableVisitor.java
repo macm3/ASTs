@@ -40,6 +40,7 @@ import ast.Program;
 import ast.This;
 import ast.Times;
 import ast.True;
+import ast.Type;
 import ast.VarDecl;
 import ast.While;
 
@@ -73,7 +74,10 @@ public class BuildSymbolTableVisitor implements Visitor {
 		AddClass(n);
 		n.i1.accept(this);
 		n.i2.accept(this);
+		AddMethod("main", null);
+		AddParam(n.i2.s, null);
 		n.s.accept(this);
+		currMethod = null;
 		currClass = null;
 	}
 
@@ -318,9 +322,18 @@ public class BuildSymbolTableVisitor implements Visitor {
 		symbolTable.getMethod(currMethod.getId(), currClass.getId()).addParam(f.i.s, f.t);
 	}
 	
+	void AddParam(String id, Type type){
+		symbolTable.getMethod(currMethod.getId(), currClass.getId()).addParam(id, type);
+	}
+	
 	void AddMethod(MethodDecl md){
 		symbolTable.getClass(currClass.getId()).addMethod(md.i.s, md.t);
 		currMethod = symbolTable.getMethod(md.i.s, currClass.getId());
+	}
+	
+	void AddMethod(String id, Type type){
+		symbolTable.getClass(currClass.getId()).addMethod(id, type);
+		currMethod = symbolTable.getMethod(id, currClass.getId());
 	}
 	
 
